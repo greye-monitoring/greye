@@ -1,0 +1,11 @@
+
+# This is just a comment.
+README.md
+certs
+deploy
+deploy/*
+config
+scripts/*
+.git
+scripts
+VERSION

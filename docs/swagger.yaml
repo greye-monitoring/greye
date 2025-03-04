@@ -1,0 +1,322 @@
+definitions:
+  models.ClusterInfo:
+    properties:
+      cluster-info:
+        $ref: '#/definitions/sync.Map'
+      ip:
+        type: string
+    type: object
+  models.ClusterInfoDetails:
+    properties:
+      error:
+        $ref: '#/definitions/models.ErrorCluster'
+      status:
+        $ref: '#/definitions/models.ClusterStatus'
+      stopMonitoringUntil:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  models.ClusterStatus:
+    enum:
+    - running
+    - deleted
+    - suspended
+    - error
+    type: string
+    x-enum-varnames:
+    - Running
+    - Deleted
+    - Suspended
+    - Error
+  models.EasyResponse:
+    properties:
+      error: {}
+      message:
+        type: string
+    type: object
+  models.EasyResponses:
+    properties:
+      error: {}
+      message:
+        type: string
+    type: object
+  models.ErrorCluster:
+    properties:
+      count:
+        type: integer
+      error_count:
+        type: integer
+      found_by:
+        type: string
+    type: object
+  models.SchedulerApplication:
+    properties:
+      body: {}
+      failedRequest:
+        type: integer
+      forcePodMonitorInstance:
+        type: string
+      header:
+        additionalProperties:
+          type: string
+        description: Method              string        `json:"method"`
+        type: object
+      host:
+        type: string
+      interval:
+        $ref: '#/definitions/time.Duration'
+      maxFailedRequests:
+        type: integer
+      name:
+        type: string
+      path:
+        items:
+          type: string
+        type: array
+      port:
+        type: integer
+      protocol:
+        type: string
+      scheduledApplication:
+        type: string
+      stopMonitoringUntil:
+        type: string
+      timeout:
+        $ref: '#/definitions/time.Duration'
+    type: object
+  models.SingleUpdateNode:
+    properties:
+      ip:
+        type: string
+      stopMonitoringUntil:
+        type: string
+    type: object
+  sync.Map:
+    type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+info:
+  contact: {}
+paths:
+  /api/v1/application/monitor:
+    get:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: url
+        example: http://example.com
+        in: query
+        name: url
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/models.SchedulerApplication'
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+      summary: Register a new user
+      tags:
+      - Application
+    put:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User registration information
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.SchedulerApplication'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+      summary: Register a new user
+      tags:
+      - Application
+  /api/v1/application/monitor/{service}:
+    delete:
+      consumes:
+      - application/json
+      description: Rimuove il monitoraggio per un'applicazione specifica identificata
+        dal suo nome.
+      parameters:
+      - description: Nome del servizio da rimuovere
+        in: path
+        name: service
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+      summary: Unschedule application monitoring
+      tags:
+      - Application
+  /api/v1/application/monitor/pod:
+    get:
+      consumes:
+      - application/json
+      description: get all applications distinct by pod
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/models.SchedulerApplication'
+              type: array
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.EasyResponse'
+      summary: get monitored applications by pod
+      tags:
+      - Application
+  /api/v1/cluster:
+    delete:
+      consumes:
+      - application/json
+      description: Register a new user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.EasyResponses'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.EasyResponses'
+      summary: Register a new user
+      tags:
+      - Cluster
+  /api/v1/cluster/status:
+    get:
+      consumes:
+      - application/json
+      description: Register a new user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ClusterInfoDetails'
+      summary: Register a new user
+      tags:
+      - Cluster
+    put:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User registration information
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ClusterInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ClusterInfo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.EasyResponses'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.EasyResponses'
+      summary: Register a new user
+      tags:
+      - Cluster
+  /api/v1/cluster/suspend:
+    put:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User registration information
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.SingleUpdateNode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ClusterInfoDetails'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.EasyResponses'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.EasyResponses'
+      summary: Register a new user
+      tags:
+      - Cluster
+swagger: "2.0"
