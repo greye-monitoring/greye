@@ -21,6 +21,6 @@ func NotificationSenderFactory(channel string, config interface{}) (ports.Sender
 		}
 		return sender, nil
 	default:
-		panic(fmt.Sprint("error creating %s sender", channel))
+		panic(fmt.Sprintf("error creating %s sender", channel))
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"greye/internal/application/domain/models"
 	annotations "greye/pkg/annotations/domain/models"
+	portsAuth "greye/pkg/authentication/domain/ports"
 	modelsHttp "greye/pkg/client/domain/models"
 	clientApp "greye/pkg/client/domain/ports"
 	ports2 "greye/pkg/notification/domain/ports"
@@ -64,6 +65,13 @@ func (s *Scheduler) ReadFromClient(key string) (clientApp.MonitoringMethod, bool
 	s.RLock()
 	defer s.RUnlock()
 	app, exist := s.client[key]
+	return app, exist
+}
+
+func (s *Scheduler) ReadFromAuthentication(key string) (portsAuth.Authentication, bool) {
+	s.RLock()
+	defer s.RUnlock()
+	app, exist := s.authentication[key]
 	return app, exist
 }
 
@@ -186,7 +194,7 @@ func (s *Scheduler) getMyHostname() string {
 	hostname := os.Getenv("HOSTNAME")
 
 	if config.Server.ApplicationName != "localhost" {
-		return fmt.Sprintf("%s.%s", hostname, config.Server.ServiceHAName)
+		return fmt.Sprintf("%s.%s:%d", hostname, config.Server.ServiceHAName, config.Server.Port)
 	}
 	return hostname
 }

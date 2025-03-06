@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"greye/internal/application/domain/models"
 	"greye/internal/application/domain/ports"
+	portsAuth "greye/pkg/authentication/domain/ports"
 	modelsHttp "greye/pkg/client/domain/models"
-	clientApp "greye/pkg/client/domain/ports"
+	clientPort "greye/pkg/client/domain/ports"
 	configPort "greye/pkg/config/domain/ports"
 	k8s "greye/pkg/importProcess/application"
 	importProcess "greye/pkg/importProcess/domain/ports"
@@ -27,14 +28,15 @@ type Scheduler struct {
 	applications sync.Map
 	greyesStatus map[string]int
 
-	k8s     importProcess.ImportProcessApplication
-	http    clientApp.HttpMethod
-	config  configPort.ConfigApplication
-	role    roleModel.Role
-	logger  logger.LoggerApplication
-	alarms  map[string]ports2.Sender
-	client  map[string]clientApp.MonitoringMethod
-	metrics metricsPort.MetricPorts
+	k8s            importProcess.ImportProcessApplication
+	http           clientPort.HttpMethod
+	config         configPort.ConfigApplication
+	role           roleModel.Role
+	logger         logger.LoggerApplication
+	alarms         map[string]ports2.Sender
+	client         map[string]clientPort.MonitoringMethod
+	metrics        metricsPort.MetricPorts
+	authentication map[string]portsAuth.Authentication
 	sync.RWMutex
 }
 
@@ -42,7 +44,7 @@ var (
 	_ ports.SchedulerService = (*Scheduler)(nil)
 )
 
-func GetApplicationInitialized(host string, http clientApp.HttpMethod, appInitialized *map[string]models.SchedulerApplication) int {
+func GetApplicationInitialized(host string, http clientPort.HttpMethod, appInitialized *map[string]models.SchedulerApplication) int {
 	//todo forse questo metodo va messo da un'altra parte!
 	var cmstatus int
 	for {
@@ -169,6 +171,7 @@ func (s *Scheduler) ManageStartupController(monitoredAppFromOtherPod *map[string
 
 	//var svcToMonitor = make(map[string]v1.Service)
 	var bulkMonitor = make(map[string][]*models.SchedulerApplication)
+	config, _ := s.config.GetConfig()
 
 	nServicesAtStartTime := len(svcList.Items)
 	servicesElaborated := 0
@@ -244,7 +247,6 @@ func (s *Scheduler) ManageStartupController(monitoredAppFromOtherPod *map[string
 						return
 					}
 
-					config, _ := s.config.GetConfig()
 					defaultValue := config.Application
 					appModels := models.NewSchedulerApplicationFromService(svc, &defaultValue)
 
@@ -277,11 +279,15 @@ func (s *Scheduler) ManageStartupController(monitoredAppFromOtherPod *map[string
 					}
 				}()
 
+				appName := config.Server.ApplicationName
 				if servicesElaborated == nServicesAtStartTime {
 					s.logger.Error("All services at startup have been elaborated, executing bulk requests")
 					for bulkHostname, bulkApps := range bulkMonitor {
+
 						s.logger.Error("Starting bulk monitoring for %s", bulkHostname)
-						if r, err := regexp.MatchString("-0.|0$", bulkHostname); err == nil && r == true {
+						regexPattern := fmt.Sprintf("^%s-0.|localhost:[0-9]*0$", appName)
+						if r, err := regexp.MatchString(regexPattern, bulkHostname); err == nil && r == true {
+
 							for _, app := range bulkApps {
 								err := s.MonitorApplication(app, true)
 								if err != nil {
@@ -327,7 +333,7 @@ func (s *Scheduler) ManageStartup(monitoredAppFromOtherPod *map[string]models.Sc
 	return nil
 }
 
-func NewScheduler(http clientApp.HttpMethod, config configPort.ConfigApplication, roleType roleModel.Role, logger logger.LoggerApplication, notification map[string]ports2.Sender, client map[string]clientApp.MonitoringMethod, metrics *metricsPort.MetricPorts, importData *k8s.ImportProcessApplication) *Scheduler {
+func NewScheduler(http clientPort.HttpMethod, config configPort.ConfigApplication, roleType roleModel.Role, logger logger.LoggerApplication, notification map[string]ports2.Sender, client map[string]clientPort.MonitoringMethod, metrics *metricsPort.MetricPorts, importData *k8s.ImportProcessApplication, auth map[string]portsAuth.Authentication) *Scheduler {
 	c, err := config.GetConfig()
 	if err != nil {
 		return nil
@@ -354,15 +360,16 @@ func NewScheduler(http clientApp.HttpMethod, config configPort.ConfigApplication
 	}
 	//
 	s := &Scheduler{applications: sync.Map{},
-		http:         http,
-		config:       config,
-		role:         roleType,
-		greyesStatus: cmstatus,
-		k8s:          importData,
-		logger:       logger,
-		alarms:       notification,
-		client:       client,
-		metrics:      *metrics,
+		http:           http,
+		config:         config,
+		role:           roleType,
+		greyesStatus:   cmstatus,
+		k8s:            importData,
+		logger:         logger,
+		alarms:         notification,
+		client:         client,
+		metrics:        *metrics,
+		authentication: auth,
 	}
 
 	s.ManageStartup(monitoredAppFromOtherPod)

@@ -12,6 +12,6 @@ func PrtocolFactory(protocol string, logger logger.LoggerApplication) (ports.Mon
 		httpMonitoring := NewHttpMonitoring(logger)
 		return httpMonitoring, nil
 	default:
-		panic(fmt.Sprint("error creating %s protocol", protocol))
+		panic(fmt.Sprintf("error creating %s protocol", protocol))
 	}
 }

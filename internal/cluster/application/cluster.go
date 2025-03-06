@@ -407,13 +407,13 @@ func (c *Cluster) verifyAndUpdate(ci models.ClusterInfoResponse) (*models.Cluste
 
 				ciLoadedMap, ok := ci.ClusterInfo[k]
 				if !ok {
-					c.logger.Info("Key not found in this cluster information: ", k)
+					c.logger.Info("Key not found in this cluster information: %s", k)
 					return true
 				}
 
 				areEquals = reflect.DeepEqual(v, ciLoadedMap)
 				if !areEquals {
-					c.logger.Info("Got differences in values for key: ", k)
+					c.logger.Info("Got differences in values for key: %s", k)
 					c.updateClusterInfo(v, ci.ClusterInfo[k], k, c.cluster.Ip, ci.Ip)
 				}
 				delete(ci.ClusterInfo, k)
@@ -423,7 +423,7 @@ func (c *Cluster) verifyAndUpdate(ci models.ClusterInfoResponse) (*models.Cluste
 	})
 
 	for k, v := range ci.ClusterInfo {
-		c.logger.Info("Adding new key to the cluster information: ", k)
+		c.logger.Info("Adding new key to the cluster information: %s", k)
 		c.cluster.ClusterInfo.Store(k, v)
 		c.metrics.Monitoring(k, 1)
 	}

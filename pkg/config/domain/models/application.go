@@ -7,6 +7,7 @@ import (
 )
 
 type Application struct {
+	Authentication    []string      `json:"authentication"`
 	IntervalSeconds   time.Duration `json:"intervalSeconds"`
 	Protocol          string        `json:"protocol"`
 	Method            string        `json:"method"`

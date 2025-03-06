@@ -79,16 +79,41 @@ func (s *Scheduler) MonitorApplication(app *models.SchedulerApplication, startup
 				if application.Name == "" && application.Host == "" {
 					s.logger.Warn("The application %s has been deleted, but another process added it again, deleting...", svcHostname)
 					s.deleteApplication(application)
+					break
 				}
 
 				method, exists := s.ReadFromClient(application.Protocol)
 				if !exists {
 					title := "Protocol undefined"
-					message := fmt.Sprint("Unsupported protocol %s", application.Protocol)
+					message := fmt.Sprintf("Unsupported protocol %s", application.Protocol)
 					s.SendNotification(&application, title, message)
 					s.logger.Error(message)
 					s.WriteToApplicationMap(svcHostname, application)
 					break
+				}
+
+				if application.Authentication.Method != "" {
+					authMethod, exists := s.ReadFromAuthentication(application.Authentication.Method)
+					if !exists {
+						title := "Authentication undefined"
+						message := fmt.Sprintf("Unsupported authentication %s method", application.Protocol)
+						s.SendNotification(&application, title, message)
+						s.logger.Error(message)
+						s.WriteToApplicationMap(svcHostname, application)
+						break
+					}
+
+					token, err := authMethod.GetAuthorization(application.Authentication)
+					if err != nil {
+						title := "Authentication error"
+						message := fmt.Sprintf("Error in authentication %s", err)
+						s.SendNotification(&application, title, message)
+						s.logger.Error(message)
+						s.WriteToApplicationMap(svcHostname, application)
+						break
+					}
+
+					application.MonitoringHttpRequest.Header["Authorization"] = token
 				}
 
 				res := method.MakeMonitoringRequest(application.MonitoringHttpRequest)
@@ -130,7 +155,7 @@ func (s *Scheduler) MonitorApplication(app *models.SchedulerApplication, startup
 func (s *Scheduler) ChooseHostname(app *models.SchedulerApplication) string {
 	svcHostname := app.GetSvcHostname()
 	application, _ := s.GetApplication(svcHostname)
-	forceScheduledApp := app.ForcePodMonitorInstance
+	forceScheduledApp := app.AddPortToForcePodMonitorInstanceIfMissing()
 	if len(application) != 0 {
 		// application is under monitoring!
 		scheduledApplication := application[svcHostname].ScheduledApplication
