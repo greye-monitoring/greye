@@ -150,7 +150,10 @@ func (s *Scheduler) addApplication(app *models.SchedulerApplication, startupPhas
 
 	hostname := s.ChooseHostname(app)
 	app.ScheduledApplication = hostname
-	if r, err := regexp.MatchString("-0.|0$", hostname); err == nil && r == true {
+	config, _ := s.config.GetConfig()
+	appName := config.Server.ApplicationName
+	regexPattern := fmt.Sprintf("^%s-0.|localhost:[0-9]*0$", appName)
+	if r, err := regexp.MatchString(regexPattern, hostname); err == nil && r == true {
 		err := s.MonitorApplication(app, startupPhase)
 		if err != nil {
 			return err
@@ -192,9 +195,5 @@ func (s *Scheduler) isEnabled(svc *v1.Service) bool {
 func (s *Scheduler) getMyHostname() string {
 	config, _ := s.config.GetConfig()
 	hostname := os.Getenv("HOSTNAME")
-
-	if config.Server.ApplicationName != "localhost" {
-		return fmt.Sprintf("%s.%s:%d", hostname, config.Server.ServiceHAName, config.Server.Port)
-	}
-	return hostname
+	return fmt.Sprintf("%s:%d", hostname, config.Server.Port)
 }

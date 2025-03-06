@@ -118,7 +118,13 @@ func (f *Factory) InitializeRole() models.Role {
 	log := f.InitializeLogger()
 	config, _ := configurator.GetConfig()
 	serverName := config.Server.ApplicationName
+
 	hostname := os.Getenv("HOSTNAME")
+
+	if hostname == "localhost" {
+		port := config.Server.Port
+		hostname = fmt.Sprintf("%s:%d", hostname, port)
+	}
 
 	regexPattern := fmt.Sprintf(`^%s-0|%s(:[0-9]0[0-9]0)$`, serverName, serverName)
 
@@ -126,6 +132,7 @@ func (f *Factory) InitializeRole() models.Role {
 
 	if err != nil || !r {
 		nClusterMonitor := config.Server.NumberGreye
+
 		regexPattern := fmt.Sprintf(`^%s(-([0-%d]))|%s(:808[0-3])$`, serverName, nClusterMonitor, serverName)
 
 		r, err = regexp.MatchString(regexPattern, hostname)

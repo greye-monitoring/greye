@@ -107,7 +107,7 @@ func (s *Scheduler) ManageStartupWorker() {
 	if appName == "localhost" {
 		hostController = fmt.Sprintf("%s:8080", appName)
 	} else {
-		hostController = fmt.Sprintf("%s-0.%s", appName, config.Server.ServiceHAName)
+		hostController = fmt.Sprintf("%s-0", appName)
 	}
 
 	s.logger.Error("hostController " + hostController)
@@ -341,7 +341,6 @@ func NewScheduler(http clientPort.HttpMethod, config configPort.ConfigApplicatio
 	cmstatus := make(map[string]int)
 	nClusterMonitor := c.Server.NumberGreye
 	appName := c.Server.ApplicationName
-	svcHAName := c.Server.ServiceHAName
 	port := c.Server.Port
 	var monitoredAppFromOtherPod = &map[string]models.SchedulerApplication{}
 	if roleType == roleModel.Controller {
@@ -350,7 +349,7 @@ func NewScheduler(http clientPort.HttpMethod, config configPort.ConfigApplicatio
 			if appName == "localhost" {
 				k = fmt.Sprintf("%s:808%d", appName, i)
 			} else {
-				k = fmt.Sprintf("%s-%d.%s:%d", appName, i, svcHAName, port)
+				k = fmt.Sprintf("%s-%d:%d", appName, i, port)
 			}
 			cmstatus[k] = 0
 			if i != 0 {
