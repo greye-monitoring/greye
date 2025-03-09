@@ -177,12 +177,10 @@ func (s *Scheduler) ManageStartupController(monitoredAppFromOtherPod *map[string
 	servicesElaborated := 0
 	go func() {
 		resourceVersion := ""
+		applicationController := make(map[string]models.SchedulerApplication)
 		for {
 			svcWatch := s.k8s.GetKubernetesMonitoringObject(resourceVersion)
 			ch := svcWatch.ResultChan()
-
-			applicationController := make(map[string]models.SchedulerApplication)
-
 			for event := range ch {
 
 				servicesElaborated++
@@ -213,9 +211,6 @@ func (s *Scheduler) ManageStartupController(monitoredAppFromOtherPod *map[string
 				metadata := svc.ObjectMeta
 				s.logger.Error("Service %s/%s received", svc.ObjectMeta.Namespace, svc.ObjectMeta.Name)
 				isEnabled := s.isEnabled(svc)
-				if isEnabled {
-					s.logger.Error("Adding service %s ...", svc.ObjectMeta.Name)
-				}
 
 				host := fmt.Sprintf("%s.%s.svc.cluster.local", metadata.Name, metadata.Namespace)
 				appExist := false

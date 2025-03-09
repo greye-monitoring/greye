@@ -390,10 +390,33 @@ func (c *Cluster) updateClusterInfo(m models.ClusterInfoDetails, y models.Cluste
 	}
 }
 
+func (c *Cluster) areClusterInfoMapsEqual(map1, map2 map[string]models.ClusterInfoDetails) bool {
+	if len(map1) != len(map2) {
+		return false
+	}
+
+	for key, value1 := range map1 {
+		value2, exists := map2[key]
+		if !exists {
+			return false
+		}
+
+		if value1.Status != value2.Status ||
+			value1.Error.FoundBy != value2.Error.FoundBy ||
+			value1.Error.Count != value2.Error.Count ||
+			value1.StopMonitoringUntil != value2.StopMonitoringUntil ||
+			!value1.Timestamp.Equal(value2.Timestamp) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (c *Cluster) verifyAndUpdate(ci models.ClusterInfoResponse) (*models.ClusterInfoResponse, error) {
 
 	response := models.ConvertClusterInfoToResponse(&c.cluster)
-	areEquals := reflect.DeepEqual(response.ClusterInfo, ci.ClusterInfo)
+	areEquals := c.areClusterInfoMapsEqual(response.ClusterInfo, ci.ClusterInfo)
 	if areEquals {
 		c.logger.Info("Cluster information are equals")
 		return &response, nil
@@ -501,6 +524,10 @@ func (c *Cluster) Remove() bool {
 	details, ok := c.cluster.ClusterInfo.Load(myIp)
 	if ok {
 		detail := details.(models.ClusterInfoDetails)
+		detail.Error = models.ErrorCluster{
+			FoundBy: "",
+			Count:   0,
+		}
 		detail.Status = models.Deleted
 		detail.Timestamp = time.Now().Local()
 		c.cluster.ClusterInfo.Store(myIp, detail)

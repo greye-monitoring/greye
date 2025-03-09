@@ -35,7 +35,6 @@ func (s *Scheduler) ReadApplications() map[string]models.SchedulerApplication {
 	return copiedMap
 }
 
-// todo models.schedulerapplication dovrebbe ritornare una copia!
 func (s *Scheduler) ReadFromApplicationMap(key string) (models.SchedulerApplication, bool) {
 
 	application, exist := s.applications.Load(key)

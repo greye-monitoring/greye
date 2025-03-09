@@ -13,7 +13,7 @@ func main() {
 
 	localStartup := os.Getenv("LOCAL")
 	file := "./config/config.json"
-	logMesage := "Starting ClusterMonitor"
+	logMesage := "Starting greye"
 	if len(localStartup) != 0 {
 		file = "./config/env-" + os.Getenv("LOCAL") + ".json"
 	}
@@ -45,14 +45,5 @@ func main() {
 	err = srv.Run(strconv.Itoa(config.Server.Port))
 	if err != nil {
 		panic(err)
-		//go func() {
-		//	log.Println("Starting HTTPS server on port", config.Server.TlsPort)
-		//	if err := srv.RunTls(strconv.Itoa(config.Server.TlsPort)); err != nil {
-		//		log.Fatal("HTTPS server error:", err)
-		//	}
-		//}()
-
-		// Prevent main from exiting
-		//select {}
 	}
 }

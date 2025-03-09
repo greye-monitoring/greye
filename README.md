@@ -1,7 +1,7 @@
 # greye
 
 <p align="center">
-  <img src="assets/logo.jpeg" alt="logo" width="250">
+  <img src="assets/logo.jpeg" alt="logo" width="500">
 </p>
 
 ## Introduction
