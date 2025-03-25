@@ -23,9 +23,8 @@ type ClusterInfoDetails struct {
 }
 
 type ErrorCluster struct {
-	ErrorCount int    `json:"error_count"`
-	FoundBy    string `json:"found_by"`
-	Count      int    `json:"count"`
+	FoundBy string `json:"found_by"`
+	Count   int    `json:"count"`
 }
 
 func ConvertClusterInfoToResponse(ci *ClusterInfo) ClusterInfoResponse {

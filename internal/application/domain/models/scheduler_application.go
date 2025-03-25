@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	annotations "greye/pkg/annotations/domain/models"
+	models2 "greye/pkg/authentication/domain/models"
 	modelsHttp "greye/pkg/client/domain/models"
 	"greye/pkg/config/domain/models"
 	"greye/pkg/scheduler/application"
@@ -27,7 +28,7 @@ func GetPortUsed(svc *v1.Service) int {
 	port := int(svc.Spec.Ports[0].Port)
 	if portAnnotation := svc.Annotations[annotations.Port]; portAnnotation != "" {
 		portInt, err := strconv.Atoi(portAnnotation)
-		if err != nil {
+		if err == nil {
 			port = int(portInt)
 		}
 	}
@@ -42,6 +43,10 @@ func NewSchedulerApplicationFromService(svc *v1.Service, defaultValue *models.Ap
 	maxFailedRequests := defaultValue.MaxFailedRequests
 	timeout := defaultValue.TimeoutSeconds * time.Second
 	monitorInstance := ""
+
+	authMethod := ""
+	authUsername := ""
+	authPassword := ""
 
 	// If the service has annotations, use them to override the default values
 	interval, err := time.ParseDuration(svc.Annotations[annotations.IntervalSeconds] + "s")
@@ -88,6 +93,18 @@ func NewSchedulerApplicationFromService(svc *v1.Service, defaultValue *models.Ap
 		}
 	}
 
+	if authMethodAnnotation := svc.Annotations[annotations.AuthenticationMethod]; authMethodAnnotation != "" {
+		authMethod = authMethodAnnotation
+	}
+
+	if authUsernameAnnotation := svc.Annotations[annotations.AuthenticationUsername]; authUsernameAnnotation != "" {
+		authUsername = authUsernameAnnotation
+	}
+
+	if authPasswordAnnotation := svc.Annotations[annotations.AuthenticationPassword]; authPasswordAnnotation != "" {
+		authPassword = authPasswordAnnotation
+	}
+
 	body := svc.Annotations[annotations.Body]
 	headerString := svc.Annotations[annotations.Headers]
 	var headers = make(map[string]string)
@@ -116,6 +133,11 @@ func NewSchedulerApplicationFromService(svc *v1.Service, defaultValue *models.Ap
 			StopMonitoringUntil: stopTime,
 			Body:                body,
 			Header:              headers,
+			Authentication: models2.AuthenticationData{
+				Method:   authMethod,
+				Username: authUsername,
+				Password: authPassword,
+			},
 		},
 		MaxFailRequests:         maxFailedRequests,
 		FailedRequest:           0,
@@ -154,4 +176,14 @@ func (s SchedulerApplication) Validate() error {
 
 func (s SchedulerApplication) GetSvcHostname() string {
 	return s.Host
+}
+
+func (s SchedulerApplication) AddPortToForcePodMonitorInstanceIfMissing() string {
+	if s.ForcePodMonitorInstance == "" {
+		return ""
+	}
+	if !strings.Contains(s.ForcePodMonitorInstance, ":") {
+		return fmt.Sprintf("%s:%d", s.ForcePodMonitorInstance, s.Port)
+	}
+	return s.ForcePodMonitorInstance
 }

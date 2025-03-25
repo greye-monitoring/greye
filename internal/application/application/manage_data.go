@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"greye/internal/application/domain/models"
 	annotations "greye/pkg/annotations/domain/models"
+	portsAuth "greye/pkg/authentication/domain/ports"
 	modelsHttp "greye/pkg/client/domain/models"
 	clientApp "greye/pkg/client/domain/ports"
 	ports2 "greye/pkg/notification/domain/ports"
@@ -34,7 +35,6 @@ func (s *Scheduler) ReadApplications() map[string]models.SchedulerApplication {
 	return copiedMap
 }
 
-// todo models.schedulerapplication dovrebbe ritornare una copia!
 func (s *Scheduler) ReadFromApplicationMap(key string) (models.SchedulerApplication, bool) {
 
 	application, exist := s.applications.Load(key)
@@ -64,6 +64,13 @@ func (s *Scheduler) ReadFromClient(key string) (clientApp.MonitoringMethod, bool
 	s.RLock()
 	defer s.RUnlock()
 	app, exist := s.client[key]
+	return app, exist
+}
+
+func (s *Scheduler) ReadFromAuthentication(key string) (portsAuth.Authentication, bool) {
+	s.RLock()
+	defer s.RUnlock()
+	app, exist := s.authentication[key]
 	return app, exist
 }
 
@@ -142,7 +149,10 @@ func (s *Scheduler) addApplication(app *models.SchedulerApplication, startupPhas
 
 	hostname := s.ChooseHostname(app)
 	app.ScheduledApplication = hostname
-	if r, err := regexp.MatchString("-0.|0$", hostname); err == nil && r == true {
+	config, _ := s.config.GetConfig()
+	appName := config.Server.ApplicationName
+	regexPattern := fmt.Sprintf("^%s-0.|localhost:[0-9]*0$", appName)
+	if r, err := regexp.MatchString(regexPattern, hostname); err == nil && r == true {
 		err := s.MonitorApplication(app, startupPhase)
 		if err != nil {
 			return err
@@ -184,9 +194,5 @@ func (s *Scheduler) isEnabled(svc *v1.Service) bool {
 func (s *Scheduler) getMyHostname() string {
 	config, _ := s.config.GetConfig()
 	hostname := os.Getenv("HOSTNAME")
-
-	if config.Server.ApplicationName != "localhost" {
-		return fmt.Sprintf("%s.%s", hostname, config.Server.ServiceHAName)
-	}
-	return hostname
+	return fmt.Sprintf("%s:%d", hostname, config.Server.Port)
 }

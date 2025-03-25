@@ -6,6 +6,8 @@ import (
 	applicationHandler "greye/internal/application/infrastructure/handlers"
 	application2 "greye/internal/cluster/application"
 	clusterHandler "greye/internal/cluster/infrastructure/handlers"
+	authenticationApp "greye/pkg/authentication/application"
+	portsAuth "greye/pkg/authentication/domain/ports"
 	clientApp "greye/pkg/client/application"
 	ports2 "greye/pkg/client/domain/ports"
 	configApp "greye/pkg/config/application"
@@ -32,16 +34,17 @@ type Factory struct {
 	configFilePath string
 	role           models.Role
 
-	importService *k8s.ImportProcessApplication
-	configurator  *configApp.ConfigService
-	validator     *valApp.Validator
-	logger        *loggerApp.Logger
-	httpClient    *clientApp.HttpApplication
-	scheduler     *schedulerApp.Job
-	notification  map[string]ports.Sender
-	protocol      map[string]ports2.MonitoringMethod
-	metricApp     *metricsPort.MetricPorts
-	metricCluster *metricsPort.MetricPorts
+	importService  *k8s.ImportProcessApplication
+	configurator   *configApp.ConfigService
+	validator      *valApp.Validator
+	logger         *loggerApp.Logger
+	httpClient     *clientApp.HttpApplication
+	scheduler      *schedulerApp.Job
+	notification   map[string]ports.Sender
+	protocol       map[string]ports2.MonitoringMethod
+	metricApp      *metricsPort.MetricPorts
+	metricCluster  *metricsPort.MetricPorts
+	authentication map[string]portsAuth.Authentication
 }
 
 func NewFactory(configFilePath string) *Factory {
@@ -49,19 +52,6 @@ func NewFactory(configFilePath string) *Factory {
 		configFilePath: configFilePath,
 	}
 }
-
-//func (f *Factory) InitializeLogger() *loggerApp.Logger {
-//	if f.configurator == nil {
-//		validator := f.InitializeValidator()
-//		path := f.logFilePath
-//
-//		repo := loggerRepo.NewCSVFile(path)
-//		app := loggerApp.NewLogger(repo, validator)
-//		f.logger = app
-//		return app
-//	}
-//	return f.logger
-//}
 
 func (f *Factory) InitializeValidator() *valApp.Validator {
 	if f.validator == nil {
@@ -128,7 +118,13 @@ func (f *Factory) InitializeRole() models.Role {
 	log := f.InitializeLogger()
 	config, _ := configurator.GetConfig()
 	serverName := config.Server.ApplicationName
+
 	hostname := os.Getenv("HOSTNAME")
+
+	if hostname == "localhost" {
+		port := config.Server.Port
+		hostname = fmt.Sprintf("%s:%d", hostname, port)
+	}
 
 	regexPattern := fmt.Sprintf(`^%s-0|%s(:[0-9]0[0-9]0)$`, serverName, serverName)
 
@@ -136,6 +132,7 @@ func (f *Factory) InitializeRole() models.Role {
 
 	if err != nil || !r {
 		nClusterMonitor := config.Server.NumberGreye
+
 		regexPattern := fmt.Sprintf(`^%s(-([0-%d]))|%s(:808[0-3])$`, serverName, nClusterMonitor, serverName)
 
 		r, err = regexp.MatchString(regexPattern, hostname)
@@ -167,7 +164,8 @@ func (f *Factory) BuildAppHandlers() *applicationHandler.ApplicationHdl {
 	notification := f.InitializeNotification()
 	protocol := f.InitializeProtocol()
 	metrics := f.initializeMetrics(models2.Application)
-	appSchedulers := application.NewScheduler(clientHandler, configurator, roleHandler, logHandler, notification, protocol, metrics, importData)
+	auth := f.InitializeAuthentication()
+	appSchedulers := application.NewScheduler(clientHandler, configurator, roleHandler, logHandler, notification, protocol, metrics, importData, auth)
 	validatorApp := f.InitializeValidator()
 	appHandlers := applicationHandler.NewApiExposedHdl(validatorApp, logHandler, clientHandler, schedulerHandler, appSchedulers, configurator)
 	return appHandlers
@@ -258,4 +256,24 @@ func (f *Factory) initializeMetrics(rt models2.RoleType) *metricsPort.MetricPort
 		f.metricCluster = &metricCluster
 		return f.metricCluster
 	}
+}
+
+func (f *Factory) InitializeAuthentication() map[string]portsAuth.Authentication {
+	if f.authentication != nil {
+		return f.authentication
+	}
+	configurator := f.InitializeConfigurator()
+	config, err := configurator.GetConfig()
+	if err != nil {
+		panic(err)
+	}
+	authenticationMap := make(map[string]portsAuth.Authentication)
+
+	for _, authenticationConfig := range config.Application.Authentication {
+		authMethod := authenticationApp.AuthFactory(authenticationConfig)
+		authenticationMap[authenticationConfig] = authMethod
+	}
+
+	f.authentication = authenticationMap
+	return f.authentication
 }

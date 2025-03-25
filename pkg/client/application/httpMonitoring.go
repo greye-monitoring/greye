@@ -6,6 +6,7 @@ import (
 	"greye/pkg/client/domain/models"
 	"greye/pkg/client/domain/ports"
 	logger "greye/pkg/logging/domain/ports"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -23,10 +24,9 @@ func NewHttpMonitoring(logger logger.LoggerApplication) *HttpMonitoring {
 
 var _ ports.MonitoringMethod = (*HttpMonitoring)(nil)
 
-// todo ho un problema con il timeout
 func (h HttpMonitoring) GetMonitoring(request models.MonitoringHttpRequest, path string) (interface{}, error) {
 	va, err := h.HttpClient.SetTimeout(request.Timeout).SetHeaders(request.Header).
-		R().Get(request.Protocol + "://" + request.Host + path)
+		R().Get(request.Protocol + "://" + request.Host + ":" + strconv.Itoa(request.Port) + path)
 	return va, err
 
 }
@@ -35,20 +35,20 @@ func (h HttpMonitoring) PostMonitoring(request models.MonitoringHttpRequest, pat
 	return h.HttpClient.SetTimeout(request.Timeout).SetHeaders(request.Header).
 		R().
 		SetBody(request.Body).
-		Post(request.Protocol + "://" + request.Host + path)
+		Post(request.Protocol + "://" + request.Host + ":" + strconv.Itoa(request.Port) + path)
 }
 
 func (h HttpMonitoring) PutMonitoring(request models.MonitoringHttpRequest, path string) (interface{}, error) {
 	return h.HttpClient.SetTimeout(request.Timeout).SetHeaders(request.Header).
 		R().
 		SetBody(request.Body).
-		Put(request.Protocol + "://" + request.Host + path)
+		Put(request.Protocol + "://" + request.Host + ":" + strconv.Itoa(request.Port) + path)
 
 }
 
 func (h HttpMonitoring) DeleteMonitoring(request models.MonitoringHttpRequest, path string) (interface{}, error) {
 	va, err := h.HttpClient.SetTimeout(request.Timeout).SetHeaders(request.Header).
-		R().Delete(request.Protocol + "://" + request.Host + path)
+		R().Delete(request.Protocol + "://" + request.Host + ":" + strconv.Itoa(request.Port) + path)
 	return va, err
 
 }

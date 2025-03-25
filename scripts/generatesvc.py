@@ -1,6 +1,6 @@
 import yaml
 
-NUM_SERVICES = 300
+NUM_SERVICES = 7
 NAMESPACE = "te"
 APP_NAME = "printall"
 OUTPUT_FILE = "services.yaml"
@@ -18,7 +18,7 @@ def generate_service_yaml(index):
                 "ge-paths": "|-\n/pippo\n/prova\n/cane"
                },
             "labels": {
-                "app": APP_NAME`1
+                "app": APP_NAME
             }
         },
         "spec": {

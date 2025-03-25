@@ -19,11 +19,9 @@ var _ ports.ConfigApplication = (*ConfigService)(nil)
 func NewConfigService(
 	repository ports.ConfigRepository,
 	validator validator.ValidatorApplication,
-	// loggers loggerModels.LoggerApplication,
 ) *ConfigService {
 	return &ConfigService{
 		repository: repository,
 		validator:  validator,
-		//logger:     loggers,
 	}
 }

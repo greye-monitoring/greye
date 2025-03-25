@@ -6,103 +6,6 @@ import (
 	"net/url"
 )
 
-//// Register godoc
-//// @Summary Register a new user
-//// @Description Register a new user
-//// @Accept json
-//// @Produce json
-//// @Tags Application
-//// @Param body body model.RequestInfo true "User registration information"
-//// @Success 200 {object} model.EasyResponse
-//// @Failure 400 {object} model.EasyResponse
-//// @Failure 500 {object} model.EasyResponse
-//// @Router /api/v1/application [post]
-//func (hdl *ApplicationHdl) AddApplicationBySvc(ctx *fiber.Ctx) error {
-//	config, _ := hdl.config.GetConfig()
-//
-//	response := &model.EasyResponse{
-//		Message: "Application added to monitoring successfully",
-//	}
-//	// retrieve hostname from env variable
-//	hostname := os.Getenv("HOSTNAME")
-//
-//	//check if hostname finish with -0
-//	r, _ := regexp.MatchString("-0$", hostname)
-//	if !r {
-//		hostname := fmt.Sprintf("%s-0.%s:%d", config.Server.ApplicationName, config.Server.ServiceHAName,
-//			config.Server.Port)
-//		//exec http call to hostname-0 to add application. put the same atom.Body
-//
-//		request := &models.HttpRequest{
-//			Name:     hostname,
-//			Host:     hostname,
-//			Timeout:  5 * time.Second,
-//			Protocol: "http",
-//			Path:     "/api/v1/application",
-//			Body:     ctx.Body(),
-//			Method:   "POST",
-//		}
-//
-//		response.Message = "Data sent to controller"
-//
-//		_, err := hdl.http.MakeRequest(request)
-//		if err != nil {
-//			hdl.logger.Error("Failed to make request to controller: ", err.Error())
-//			response.Message = "Failed to make request to controller"
-//
-//		}
-//		return ctx.Status(fiber.StatusOK).JSON(response)
-//
-//	}
-//	var requestBody *v1.Service
-//	if err := ctx.BodyParser(&requestBody); err != nil {
-//		response.Message = "Invalid request body"
-//		response.Error = err.Error()
-//
-//		return ctx.Status(fiber.StatusOK).JSON(response)
-//	}
-//	//data, _ := hdl.schedulerData.GetApplication("")
-//	// Convert the map to JSON
-//	//jsonData, err := json.Marshal(data)
-//	//if err != nil {
-//	//	hdl.logger.Error("Failed to marshal application data: ", err.Error())
-//	//	response.Message = "Failed to marshal application data"
-//	//	response.Error = err.Error()
-//	//	return ctx.Status(fiber.StatusOK).JSON(response)
-//	//}
-//
-//	//hdl.logger.Info(string(jsonData))
-//	isToEnable := hdl.schedulerData.IsEnabled(requestBody)
-//
-//	// recupera l'oggett application dalle configurazioni generiche
-//	defaultValue := config.Application
-//
-//	application := model.NewSchedulerApplicationFromService(requestBody, &defaultValue)
-//	if err := hdl.validator.Struct(application); err != nil {
-//		hdl.logger.Error(fmt.Sprintf("Error validating application: %v", err))
-//		response.Message = "Error validating application"
-//		response.Error = err.Error()
-//		return ctx.Status(fiber.StatusOK).JSON(response)
-//	}
-//	if isToEnable {
-//		err := hdl.schedulerData.AddApplication(application, false)
-//		if err != nil {
-//			response.Message = "error adding application to scheduler"
-//			response.Error = err.Error()
-//			return ctx.Status(fiber.StatusOK).JSON(response)
-//		}
-//	} else {
-//		err := hdl.schedulerData.DeleteApplication(application)
-//		if err != nil {
-//			response.Message = "error deleting application from scheduler"
-//			return ctx.Status(fiber.StatusOK).JSON(response)
-//		}
-//		response.Message = "Application deleted successfully"
-//	}
-//
-//	return ctx.Status(fiber.StatusOK).JSON(response)
-//}
-
 // UnscheduleApplication è la funzione chiamata per gestire l'endpoint DELETE.
 // @Summary Unschedule application monitoring
 // @Description Rimuove il monitoraggio per un'applicazione specifica identificata dal suo nome.
@@ -119,16 +22,9 @@ func (hdl *ApplicationHdl) UnscheduleApplication(ctx *fiber.Ctx) error {
 		Message: "Service unscheduled",
 	}
 
-	service, err := url.QueryUnescape(ctx.Params("service"))
-	if err != nil {
-		response.Message = "Error decoding the service"
-		response.Error = err.Error()
-		hdl.logger.Error("%s", response.Message)
-		hdl.logger.Error("%s", response.Error)
-		return ctx.Status(fiber.StatusBadRequest).JSON(response)
-	}
+	service, _ := url.QueryUnescape(ctx.Params("service"))
 
-	err = hdl.schedulerData.DeleteApplicationFromUrl(service)
+	err := hdl.schedulerData.DeleteApplicationFromUrl(service)
 	if err != nil {
 		response.Message = "Error unscheduling application"
 		response.Error = err.Error()

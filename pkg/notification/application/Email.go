@@ -33,7 +33,7 @@ func NewEmailSender(config map[string]interface{}) (*EmailSender, error) {
 }
 
 func (t *EmailSender) Send(title string, message string) (interface{}, error) {
-	cm := fmt.Sprint("%s %s", title, message)
+	cm := fmt.Sprintf("%s %s", title, message)
 	fmt.Println(cm)
 	return "Telegram notification sent successfully", nil
 }

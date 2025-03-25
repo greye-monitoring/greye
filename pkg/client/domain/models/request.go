@@ -1,6 +1,7 @@
 package models
 
 import (
+	"greye/pkg/authentication/domain/models"
 	"net/http"
 	"time"
 )
@@ -13,10 +14,11 @@ type MonitoringHttpRequest struct {
 	Protocol string        `json:"protocol"`
 	Path     []string      `json:"path"`
 	//Method              string        `json:"method"`
-	Header              map[string]string `json:"header"`
-	Body                interface{}       `json:"body"`
-	Interval            time.Duration     `json:"interval"`
-	StopMonitoringUntil time.Time         `json:"stopMonitoringUntil"`
+	Header              map[string]string         `json:"header"`
+	Body                interface{}               `json:"body"`
+	Interval            time.Duration             `json:"interval"`
+	StopMonitoringUntil time.Time                 `json:"stopMonitoringUntil"`
+	Authentication      models.AuthenticationData `json:"authentication"`
 }
 
 type HttpRequest struct {
