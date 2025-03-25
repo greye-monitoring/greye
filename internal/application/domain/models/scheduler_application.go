@@ -28,7 +28,7 @@ func GetPortUsed(svc *v1.Service) int {
 	port := int(svc.Spec.Ports[0].Port)
 	if portAnnotation := svc.Annotations[annotations.Port]; portAnnotation != "" {
 		portInt, err := strconv.Atoi(portAnnotation)
-		if err != nil {
+		if err == nil {
 			port = int(portInt)
 		}
 	}

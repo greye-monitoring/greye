@@ -22,16 +22,9 @@ func (hdl *ApplicationHdl) UnscheduleApplication(ctx *fiber.Ctx) error {
 		Message: "Service unscheduled",
 	}
 
-	service, err := url.QueryUnescape(ctx.Params("service"))
-	if err != nil {
-		response.Message = "Error decoding the service"
-		response.Error = err.Error()
-		hdl.logger.Error("%s", response.Message)
-		hdl.logger.Error("%s", response.Error)
-		return ctx.Status(fiber.StatusBadRequest).JSON(response)
-	}
+	service, _ := url.QueryUnescape(ctx.Params("service"))
 
-	err = hdl.schedulerData.DeleteApplicationFromUrl(service)
+	err := hdl.schedulerData.DeleteApplicationFromUrl(service)
 	if err != nil {
 		response.Message = "Error unscheduling application"
 		response.Error = err.Error()
